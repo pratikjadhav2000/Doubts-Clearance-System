@@ -1,40 +1,49 @@
 import express from "express";
-import mongoose from "mongoose";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
 import cors from "cors";
-import { connectDB } from "./config/db.js";
-
-import userRoutes from "./routes/userroutes.js";
-import doubtRoutes from "./routes/doubtroutes.js";
-
-
+import session from "express-session";       // 👈 NEW
+import passport from "passport";             // 👈 NEW
+import "./config/passport.js";               // 👈 NEW (loads Google strategy)
+import authRoutes from "./routes/authRoutes.js";
 
 dotenv.config();
 
 const app = express();
-app.use(cors());
-app.use(express.json());
-connectDB();
 
-
-// Connect to MongoDB
-mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
+// ✅ allow cross-origin (frontend later)
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    credentials: true,
   })
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch((err) => console.error("❌ MongoDB Connection Error:", err.message));
+);
 
-// Basic route
+app.use(express.json());
+
+// ✅ add session & passport before routes
+app.use(
+  session({
+    secret: "replace-with-strong-secret", // use env var in prod
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
+
+// ✅ connect to Mongo
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => console.error(err));
+
+// ✅ routes
+app.use("/api/auth", authRoutes);
+
 app.get("/", (req, res) => {
-  res.send("Server is running successfully!");
+  res.send("OAuth server running...");
 });
-
-app.use("/api/users", userRoutes);
-app.use("/api/doubts", doubtRoutes);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server started on http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
