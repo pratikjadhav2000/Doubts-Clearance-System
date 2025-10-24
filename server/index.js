@@ -1,49 +1,60 @@
 import express from "express";
-import dotenv from "dotenv";
 import mongoose from "mongoose";
+import dotenv from "dotenv";
 import cors from "cors";
-import session from "express-session";       // 👈 NEW
-import passport from "passport";             // 👈 NEW
-import "./config/passport.js";               // 👈 NEW (loads Google strategy)
+
+import { connectDB } from "./config/db.js";
+
+// Routes
+import userRoutes from "./routes/userRoutes.js";
+import doubtRoutes from "./routes/doubtRoutes.js";
+import answerRoutes from "./routes/answerRoutes.js";
+import commentRoutes from "./routes/commentRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import voteRoutes from "./routes/voteRoutes.js"; // optional if using vote controller
+
+// Middleware
+import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 
 dotenv.config();
 
 const app = express();
 
-// ✅ allow cross-origin (frontend later)
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
-    credentials: true,
-  })
-);
-
+// Middleware
+app.use(cors());
 app.use(express.json());
 
-// ✅ add session & passport before routes
-app.use(
-  session({
-    secret: "replace-with-strong-secret", // use env var in prod
-    resave: false,
-    saveUninitialized: false,
-  })
-);
-app.use(passport.initialize());
-app.use(passport.session());
-
-// ✅ connect to Mongo
+// Connect to MongoDB
+connectDB(); // using your config/db.js
+// or directly via mongoose.connect
 mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => console.error(err));
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch((err) => console.error("❌ MongoDB Connection Error:", err.message));
 
-// ✅ routes
-app.use("/api/auth", authRoutes);
-
+// Basic route
 app.get("/", (req, res) => {
-  res.send("OAuth server running...");
+  res.send("🚀 Doubt Clearance System Server is running!");
 });
 
+// API routes
+app.use("/api/users", userRoutes);
+app.use("/api/doubts", doubtRoutes);
+app.use("/api/answers", answerRoutes);
+app.use("/api/comments", commentRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/votes", voteRoutes); // optional
+
+// Error handling middleware
+app.use(notFound);
+app.use(errorHandler);
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`🚀 Server started on http://localhost:${PORT}`);
+});
+
+export default app;
