@@ -1,8 +1,23 @@
 import express from "express";
-export const router = express.Router();
+import {
+  createDoubt,
+  getAllDoubts,
+  getDoubtById,
+  updateDoubt,
+  deleteDoubt,
+  searchDoubts
+} from "../controllers/doubtController.js";
 
-router.get("/", (req, res) => {
-  res.json({ message: "Doubt route working ✅" });
-});
+import { protect } from "../middleware/authMiddleware.js";
+
+const router = express.Router();
+
+// CRUD
+router.post("/", protect, createDoubt);
+router.get("/", getAllDoubts);
+router.get("/search", searchDoubts);
+router.get("/:doubtId", getDoubtById);
+router.put("/:doubtId", protect, updateDoubt);
+router.delete("/:doubtId", protect, deleteDoubt);
 
 export default router;
