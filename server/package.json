@@ -1,21 +1,43 @@
 {
-  "name": "server",
+  "name": "doubts-clearance-system",
   "version": "1.0.0",
+  "description": "Backend for the Doubts Clearance System (MERN project with Google OAuth authentication).",
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
-  },
+  "start": "node src/server.js",
+  "dev": "nodemon src/server.js"
+},
   "dependencies": {
+    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "google-auth-library": "^10.4.1",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.5.1"
+    "mongoose": "^8.19.1",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://thunder010@github.com/thunder010/Doubts-Clearance-System.git"
+  },
+  "keywords": [
+    "MERN",
+    "Google OAuth",
+    "Express",
+    "MongoDB",
+    "JWT",
+    "NITC"
+  ],
+  "author": "Sanket Bobhate",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/thunder010/Doubts-Clearance-System/issues"
+  },
+  "homepage": "https://github.com/thunder010/Doubts-Clearance-System#readme"
 }
