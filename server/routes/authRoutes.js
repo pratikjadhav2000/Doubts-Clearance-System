@@ -1,13 +1,38 @@
 import express from "express";
-import { googleLogin, getMe } from "../controllers/authController.js";
-import { protect } from "../middleware/authMiddleware.js";
+import passport from "passport";
+import "../config/passport.js";
+import { protect } from "../middlewares/authMiddleware.js"; // 👈 moved import to top
 
 const router = express.Router();
 
-// Google OAuth login
-router.post("/google", googleLogin);
+// Start Google login
+router.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
 
-// Get logged-in user
-router.get("/me", protect, getMe);
+// Callback (no frontend yet → return JSON)
+router.get(
+  "/google/callback",
+  passport.authenticate("google", { failureRedirect: "/api/auth/login/failed" }),
+  (req, res) => {
+    const { token, user } = req.user;
 
-export default router;
+    // 🔁 redirect to frontend with token
+    const redirectUrl = `${process.env.CLIENT_URL}?token=${token}`;
+    res.redirect(redirectUrl);
+  }
+);
+
+
+// Failure route
+router.get("/login/failed", (_req, res) =>
+  res.status(401).json({ success: false, message: "Google login failed or not allowed" })
+);
+
+// ✅ protected route (test)
+router.get("/me", protect, (req, res) => {
+  res.json({ user: req.user });
+});
+
+export default router; // 👈 keep export last
