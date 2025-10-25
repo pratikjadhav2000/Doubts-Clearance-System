@@ -1,37 +1,53 @@
-import { OAuth2Client } from "google-auth-library";
-import jwt from "jsonwebtoken";
-import User from "../models/User.js";
+import User from "../src/models/User.js";
+import generateToken from "../utils/generateToken.js";
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
-export const googleLogin = async (req, res) => {
-  const { tokenId } = req.body; // ID token sent from frontend
+// Register
+export const registerUser = async (req, res) => {
   try {
-    const ticket = await client.verifyIdToken({
-      idToken: tokenId,
-      audience: process.env.GOOGLE_CLIENT_ID,
+    const { name, email, password, role } = req.body;
+
+    const userExists = await User.findOne({ email });
+    if (userExists) return res.status(400).json({ message: "User already exists" });
+
+    const user = await User.create({ name, email, password, role });
+
+    res.status(201).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      token: generateToken(user._id, user.role),
     });
-
-    const payload = ticket.getPayload();
-    const { email, name, picture } = payload;
-
-    // Check if user exists
-    let user = await User.findOne({ email });
-    if (!user) {
-      user = await User.create({ name, email, profilePic: picture, role: "student" });
-    }
-
-    // Generate JWT
-    const jwtToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
-
-    res.json({ token: jwtToken, user });
   } catch (error) {
-    res.status(401).json({ message: "Google login failed", error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
+// Login
+export const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      token: generateToken(user._id, user.role),
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get current user
 export const getMe = async (req, res) => {
-  res.json(req.user); // req.user set by protect middleware
+  const user = await User.findById(req.user.id).select("-password");
+  res.json(user);
 };

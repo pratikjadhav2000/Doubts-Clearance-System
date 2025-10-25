@@ -1,60 +1,58 @@
 import express from "express";
-import mongoose from "mongoose";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
 import cors from "cors";
+import session from "express-session";
+import passport from "passport";
+import "./config/passport.js"; // Google OAuth strategy
 
-import { connectDB } from "./config/db.js";
-
-// Routes
-import userRoutes from "./routes/userRoutes.js";
-import doubtRoutes from "./routes/doubtRoutes.js";
-import answerRoutes from "./routes/answerRoutes.js";
-import commentRoutes from "./routes/commentRoutes.js";
+// ✅ Import all routes
 import authRoutes from "./routes/authRoutes.js";
-import voteRoutes from "./routes/voteRoutes.js"; // optional if using vote controller
-
-// Middleware
-import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
+import doubtRoutes from "./routes/doubtRoutes.js";
+import userRoutes from "./routes/userRoutes.js"; // 👈 NEW — User management routes
 
 dotenv.config();
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// ✅ CORS Setup
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    credentials: true,
+  })
+);
+
+// ✅ JSON Parser
 app.use(express.json());
 
-// Connect to MongoDB
-connectDB(); // using your config/db.js
-// or directly via mongoose.connect
-mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
+// ✅ Sessions + Passport
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "replace-with-strong-secret",
+    resave: false,
+    saveUninitialized: false,
   })
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch((err) => console.error("❌ MongoDB Connection Error:", err.message));
+);
+app.use(passport.initialize());
+app.use(passport.session());
 
-// Basic route
-app.get("/", (req, res) => {
-  res.send("🚀 Doubt Clearance System Server is running!");
-});
+// ✅ MongoDB Connection
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => console.error("❌ MongoDB Error:", err.message));
 
-// API routes
-app.use("/api/users", userRoutes);
-app.use("/api/doubts", doubtRoutes);
-app.use("/api/answers", answerRoutes);
-app.use("/api/comments", commentRoutes);
+// ✅ Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/votes", voteRoutes); // optional
+app.use("/api/doubts", doubtRoutes);
+app.use("/api/users", userRoutes); // 👈 NEW — Admin/User role management
 
-// Error handling middleware
-app.use(notFound);
-app.use(errorHandler);
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server started on http://localhost:${PORT}`);
+// ✅ Root
+app.get("/", (req, res) => {
+  res.send("🚀 OAuth + Doubt backend running successfully!");
 });
 
-export default app;
+// ✅ Server Start
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

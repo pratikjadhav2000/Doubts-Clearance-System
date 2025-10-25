@@ -1,30 +1,18 @@
 import express from "express";
-import {
-  getUserProfile,
-  updateUserProfile,
-  getAllUsers,
-  getCurrentUser,
-  updateUserRole,
-  getReputationHistory
-} from "../controllers/userController.js";
-
-import { protect } from "../middleware/authMiddleware.js";
-import { authorizeRoles } from "../middleware/roleMiddleware.js";
+import { protect, authorizeRoles } from "../middlewares/authMiddleware.js";
+import { getAllUsers, updateUserRole } from "../controllers/userController.js";
 
 const router = express.Router();
 
-// Public routes
-router.get("/:userId", getUserProfile);
+// ✅ Health check (optional)
+router.get("/test", (req, res) => {
+  res.json({ message: "User route working ✅" });
+});
 
-// Protected routes
-router.get("/me", protect, getCurrentUser);
-router.put("/:userId", protect, updateUserProfile);
+// ✅ Admin-only: Get all users
+router.get("/", protect, authorizeRoles("ADMIN"), getAllUsers);
 
-// Admin-only routes
-router.get("/", protect, authorizeRoles("admin"), getAllUsers);
-router.put("/:userId/role", protect, authorizeRoles("admin"), updateUserRole);
-
-// Reputation
-router.get("/:userId/reputation", getReputationHistory);
+// ✅ Admin-only: Promote or demote user
+router.put("/:id/role", protect, authorizeRoles("ADMIN"), updateUserRole);
 
 export default router;
