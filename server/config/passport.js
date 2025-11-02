@@ -6,55 +6,76 @@ import generateToken from "../utils/generateToken.js";
 
 dotenv.config();
 
-// ✅ Only allow NITC accounts
-const ALLOWED_DOMAIN = "nitc.ac.in";
+/* -------------------------------
+   ✅ Hard-coded Admin List
+   (Replace with your actual emails)
+-------------------------------- */
+const ADMIN_EMAILS = ["kevalsinh_m250833cs@nitc.ac.in", "sanket@nitc.ac.in"];
 
+/* -------------------------------
+   ✅ Google OAuth Configuration
+-------------------------------- */
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "/api/auth/google/callback",
+      // ✅ Use absolute callback to avoid OAuth redirect mismatch
+      callbackURL:
+        process.env.GOOGLE_CALLBACK_URL ||
+        "http://localhost:5000/api/auth/google/callback",
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
         const email = profile.emails?.[0]?.value || "";
         const name = profile.displayName || "User";
 
-        // 1️⃣ Block non-NITC users
-        if (!email.endsWith(`@${ALLOWED_DOMAIN}`)) {
-          console.log(`❌ Blocked login attempt: ${email}`);
+        // ✅ Restrict only NITC domain (optional)
+        if (!email.endsWith("@nitc.ac.in")) {
+          console.log(`❌ Blocked non-NITC user: ${email}`);
           return done(null, false, { message: "Only NITC accounts allowed" });
         }
 
-        // 2️⃣ Check if user already exists
+        // ✅ Check existing user
         let user = await User.findOne({ email });
 
-        // 3️⃣ If not, create new Google user
+        // ✅ Create new user if not found
         if (!user) {
           user = await User.create({
             name,
             email,
             authProvider: "google",
             googleId: profile.id,
-            role: "ASKER", // default role
+            role: ADMIN_EMAILS.includes(email.toLowerCase()) ? "ADMIN" : "USER",
           });
+          console.log(`🆕 Created new user: ${email} (${user.role})`);
         }
 
-        // 4️⃣ Create JWT for your API
+        // ✅ Sync admin role dynamically
+        if (ADMIN_EMAILS.includes(email.toLowerCase()) && user.role !== "ADMIN") {
+          user.role = "ADMIN";
+          await user.save();
+          console.log(`🔄 Updated ${email} to ADMIN role`);
+        }
+
+        // ✅ Generate token for frontend
         const token = generateToken(user._id, user.role);
 
-        // 5️⃣ Attach both to req.user for callback route
+        console.log(`✅ ${email} logged in successfully as ${user.role}`);
+
+        // ✅ Attach token + user to session
         return done(null, { user, token });
       } catch (err) {
-        console.error("OAuth error:", err);
-        return done(err, null);
+        console.error("OAuth Error:", err.message);
+        done(err, null);
       }
     }
   )
 );
 
-// ✅ Required for passport sessions (temporary handshake)
+/* -------------------------------
+   ✅ Passport Session Handlers
+-------------------------------- */
 passport.serializeUser((obj, done) => done(null, obj));
 passport.deserializeUser((obj, done) => done(null, obj));
 

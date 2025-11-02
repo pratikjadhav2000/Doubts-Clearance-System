@@ -15,27 +15,53 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // Get user
+        // Get user info
         const userRes = await axios.get("http://localhost:5000/api/auth/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUser(userRes.data.user);
+  headers: { Authorization: `Bearer ${token}` },
+});
+console.log("User API response:", userRes.data); // 🧩 add this
+
+        // const userRes = await axios.get("http://localhost:5000/api/auth/me", {
+        //   headers: { Authorization: `Bearer ${token}` },
+        // });
+
+        const userData = userRes.data.user || userRes.data;
+        setUser(userData);
+
+        // ✅ Store role locally (for global use)
+        if (userData.role) {
+          localStorage.setItem("user_role", userData.role);
+        }
 
         // Get dashboard stats
         const res = await axios.get("http://localhost:5000/api/doubts/dashboard", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setStats(res.data.stats);
-        setRecent(res.data.recent);
+
+        // Safe defaults
+        setStats(res.data.stats || { total: 0, resolved: 0, pending: 0 });
+        setRecent(res.data.recent || []);
       } catch (err) {
         console.error("Dashboard load error:", err);
       }
     };
-    fetchDashboardData();
+
+    if (token) fetchDashboardData();
   }, [token]);
 
+  // ✅ Logout handler
+  const handleLogout = () => {
+    localStorage.removeItem("jwt_token");
+    localStorage.removeItem("user_role");
+    window.location.href = "/login";
+  };
+
   if (!user)
-    return <p className="text-center text-gray-500 mt-10">Loading dashboard...</p>;
+    return (
+      <p className="text-center text-gray-500 mt-10">Loading dashboard...</p>
+    );
+
+  const isAdmin = user?.role === "ADMIN";
 
   return (
     <div className="min-h-screen flex bg-gray-50">
@@ -58,31 +84,57 @@ const Dashboard = () => {
           >
             🏠 Dashboard
           </a>
-          <a href="/doubts/new" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100">
+          <a
+            href="/doubts/new"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100"
+          >
             ✏️ Post Doubt
           </a>
-          <a href="/doubts" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100">
+          <a
+            href="/doubts"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100"
+          >
             🔍 Search
           </a>
-          <a href="/my-doubts" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100">
+          <a
+            href="/my-doubts"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100"
+          >
             📚 My Doubts
           </a>
-          {user.role === "ADMIN" && (
-            <a href="/admin" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100">
+
+          {/* ✅ Admin-only sidebar item */}
+          {isAdmin && (
+            <a
+              href="/admin"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100"
+            >
               👨‍💻 Admin Panel
             </a>
           )}
         </nav>
       </aside>
 
-      {/* Main */}
-      <main className="flex-1 p-10">
-        {/* Header */}
+      {/* Main content */}
+      <main className="flex-1 p-10 relative">
+        {/* ✅ Logout button (optional) */}
+        <div className="absolute top-6 right-6">
+          {/* Uncomment if you want to show logout
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+          >
+            Logout
+          </button> */}
+        </div>
+
+        {/* Dashboard Header */}
         <h2 className="text-3xl font-bold text-gray-800 mb-6">
-          Welcome back, <span className="text-blue-600">{user.name}</span> 👋
+          Welcome back,{" "}
+          <span className="text-blue-600">{user.name}</span> 👋
         </h2>
 
-        {/* Stats Section */}
+        {/* Stats section */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
           <div className="bg-blue-100 p-6 rounded-xl shadow-sm text-center">
             <h3 className="text-4xl font-bold text-blue-700">{stats.total}</h3>
@@ -90,17 +142,21 @@ const Dashboard = () => {
           </div>
 
           <div className="bg-green-100 p-6 rounded-xl shadow-sm text-center">
-            <h3 className="text-4xl font-bold text-green-700">{stats.resolved}</h3>
+            <h3 className="text-4xl font-bold text-green-700">
+              {stats.resolved}
+            </h3>
             <p className="text-gray-600 font-medium mt-2">Resolved Doubts</p>
           </div>
 
           <div className="bg-yellow-100 p-6 rounded-xl shadow-sm text-center">
-            <h3 className="text-4xl font-bold text-yellow-700">{stats.pending}</h3>
+            <h3 className="text-4xl font-bold text-yellow-700">
+              {stats.pending}
+            </h3>
             <p className="text-gray-600 font-medium mt-2">Pending Doubts</p>
           </div>
         </div>
 
-        {/* Recent Doubts */}
+        {/* Recent doubts */}
         <div className="bg-white rounded-xl shadow p-6">
           <h3 className="text-xl font-semibold mb-4 text-gray-800">
             Recent Doubts
@@ -134,7 +190,7 @@ const Dashboard = () => {
                       </span>
                     </td>
                     <td className="py-3 px-4 font-semibold text-gray-700">
-                      {doubt.votes}
+                      {doubt.votes || 0}
                     </td>
                     <td className="py-3 px-4 text-gray-500">
                       {new Date(doubt.createdAt).toLocaleDateString()}

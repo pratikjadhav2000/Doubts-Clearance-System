@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useEffect } from "react";
 import {
   BrowserRouter,
@@ -10,34 +9,45 @@ import {
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
-
+import Footer from "./components/Footer";
 import LoginPage from "./pages/LoginPage";
 import Dashboard from "./pages/Dashboard";
 import AllDoubtsPage from "./pages/AllDoubtsPage";
 import MyDoubtsPage from "./pages/MyDoubtsPage";
 import AskDoubtPage from "./pages/AskDoubtPage";
-import AdminPage from "./pages/AdminPage"; // ✅ Added this import
+import AdminPage from "./pages/AdminPage";
 import NotFound from "./pages/NotFound";
 
-// ✅ Component to handle token in URL and redirect
+
+/**
+ * RootRedirect
+ * - Captures ?token=...&role=...
+ * - Saves token + role in localStorage
+ * - Redirects admin → /admin, others → /dashboard
+ */
 function RootRedirect() {
   const location = useLocation();
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const token = params.get("token");
+    const role = params.get("role");
 
     if (token) {
-      // Store JWT token from backend redirect
       localStorage.setItem("jwt_token", token);
+      if (role) localStorage.setItem("user_role", role);
 
-      // Clean the URL and redirect to dashboard
-      window.location.href = "/dashboard";
+      // redirect based on role
+      if (role === "ADMIN") {
+        window.location.replace("/dashboard");
+      } else {
+        window.location.replace("/dashboard");
+      }
     }
   }, [location.search]);
 
-  const isAuthed = !!localStorage.getItem("jwt_token");
-  return isAuthed ? <Navigate to="/dashboard" replace /> : <LoginPage />;
+  const token = localStorage.getItem("jwt_token");
+  return token ? <Navigate to="/dashboard" replace /> : <LoginPage />;
 }
 
 function App() {
@@ -47,10 +57,10 @@ function App() {
     <BrowserRouter>
       {isAuthed && <Navbar />}
       <Routes>
-        {/* ✅ Root route — handles token or redirects */}
+        {/* Root: Handles Google login redirect */}
         <Route path="/" element={<RootRedirect />} />
 
-        {/* Protected routes */}
+        {/* Authenticated routes */}
         <Route
           path="/dashboard"
           element={
@@ -92,14 +102,15 @@ function App() {
           }
         />
 
-        {/* Optional: keep a separate /login route for direct access */}
+        {/* Login + 404 */}
         <Route path="/login" element={<LoginPage />} />
-
-        {/* 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
+       {/* ✅ Footer added globally */}
+      <Footer />
     </BrowserRouter>
   );
 }
+
 
 export default App;

@@ -1,38 +1,52 @@
 import express from "express";
 import passport from "passport";
-import "../config/passport.js";
-import { protect } from "../middlewares/authMiddleware.js"; // 👈 moved import to top
+import {
+  registerUser,
+  loginUser,
+  googleAuthCallback,
+  getMe,
+} from "../controllers/authController.js";
+import { protect } from "../middleware/authMiddleware.js"; // ✅ corrected path
 
 const router = express.Router();
 
-// Start Google login
+/* -------------------------------
+   ✅ Google OAuth Routes
+-------------------------------- */
+
+// 1️⃣ Start Google login
 router.get(
   "/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
-// Callback (no frontend yet → return JSON)
+// 2️⃣ Google callback (handled by controller)
 router.get(
   "/google/callback",
   passport.authenticate("google", { failureRedirect: "/api/auth/login/failed" }),
-  (req, res) => {
-    const { token, user } = req.user;
-
-    // 🔁 redirect to frontend with token
-    const redirectUrl = `${process.env.CLIENT_URL}?token=${token}`;
-    res.redirect(redirectUrl);
-  }
+  googleAuthCallback
 );
 
-
-// Failure route
+// 3️⃣ Google failure route
 router.get("/login/failed", (_req, res) =>
-  res.status(401).json({ success: false, message: "Google login failed or not allowed" })
+  res.status(401).json({
+    success: false,
+    message: "Google login failed or not allowed",
+  })
 );
 
-// ✅ protected route (test)
-router.get("/me", protect, (req, res) => {
-  res.json({ user: req.user });
-});
+/* -------------------------------
+   ✅ Local Auth Routes (optional)
+-------------------------------- */
+router.post("/register", registerUser);
+router.post("/login", loginUser);
 
-export default router; // 👈 keep export last
+/* -------------------------------
+   ✅ Authenticated User
+-------------------------------- */
+router.get("/me", protect, getMe);
+
+/* -------------------------------
+   ✅ Default Export
+-------------------------------- */
+export default router;

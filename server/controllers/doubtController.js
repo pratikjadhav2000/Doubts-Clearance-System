@@ -1,27 +1,49 @@
-import Doubt from "../models/doubtModel.js"; // Doubt model
+import mongoose from "mongoose";
+import Doubt from "../models/doubtModel.js";
 
-// ✅ 1. Create new doubt (Ask Doubt Page)
+/* -------------------------------
+   1️⃣ Create new doubt (Ask Doubt Page)
+-------------------------------- */
 export const createDoubt = async (req, res) => {
   try {
-    const { title, description, tags } = req.body;
+    console.log("📦 Incoming body:", req.body);
+    console.log("📁 Incoming files:", req.files);
+
+    // ✅ Defensive fallback
+    const body = req.body || {};
+    const { title, description, tags } = body;
+
+    if (!title || !description) {
+      return res.status(400).json({ message: "Title and description are required" });
+    }
+
+    // ✅ Extract uploaded file paths
+    const attachments = req.files?.map((file) => `/uploads/${file.filename}`) || [];
 
     const doubt = await Doubt.create({
       title,
       description,
-      tags,
+      tags: Array.isArray(tags) ? tags : [],
       user: req.user._id,
+      attachments,
     });
 
-    res.status(201).json(doubt);
+    res.status(201).json({ message: "Doubt created successfully", doubt });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Create doubt error:", error);
+    res.status(500).json({ message: "Server error while creating doubt" });
   }
 };
 
-// ✅ 2. Check for duplicate doubts before posting
+
+/* -------------------------------
+   2️⃣ Check for duplicate doubts
+-------------------------------- */
 export const checkDuplicateDoubt = async (req, res) => {
-  const { title } = req.body;
   try {
+    const { title } = req.body;
+    if (!title) return res.status(400).json({ message: "Title is required" });
+
     const similar = await Doubt.find({
       title: { $regex: title, $options: "i" },
     })
@@ -30,39 +52,52 @@ export const checkDuplicateDoubt = async (req, res) => {
 
     res.json({ similar });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Duplicate check error:", error);
+    res.status(500).json({ message: "Error checking duplicates" });
   }
 };
 
-// ✅ 3. Get all doubts (All Doubts Page)
+/* -------------------------------
+   3️⃣ Get all doubts (All Doubts Page / Admin)
+-------------------------------- */
 export const getAllDoubts = async (req, res) => {
   try {
-    const doubts = await Doubt.find()
+    const query = req.user?.role === "ADMIN" ? {} : { status: { $ne: "HIDDEN" } };
+    const doubts = await Doubt.find(query)
       .populate("user", "name email")
       .populate("replies.user", "name email")
       .sort({ createdAt: -1 });
 
-    res.json(doubts);
+    res.json({ total: doubts.length, doubts });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Get all doubts error:", error);
+    res.status(500).json({ message: "Failed to load doubts" });
   }
 };
 
-// ✅ 4. Get only current user’s doubts (My Doubts Page)
+/* -------------------------------
+   4️⃣ Get current user's doubts (My Doubts Page)
+-------------------------------- */
 export const getMyDoubts = async (req, res) => {
   try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: "Not authorized. Missing user." });
+    }
+
     const doubts = await Doubt.find({ user: req.user._id })
-      .populate("user", "name email")
       .populate("replies.user", "name email")
       .sort({ createdAt: -1 });
 
-    res.json(doubts);
+    res.json({ count: doubts.length, doubts });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("My doubts error:", error);
+    res.status(500).json({ message: "Failed to fetch user doubts" });
   }
 };
 
-// ✅ 5. Dashboard stats (Dashboard Page)
+/* -------------------------------
+   5️⃣ Dashboard stats (Dashboard Page)
+-------------------------------- */
 export const getDashboardStats = async (req, res) => {
   try {
     const total = await Doubt.countDocuments();
@@ -79,88 +114,95 @@ export const getDashboardStats = async (req, res) => {
       recent,
     });
   } catch (error) {
+    console.error("Dashboard error:", error);
     res.status(500).json({ message: "Error loading dashboard data" });
   }
 };
 
-// ✅ 6. Upvote / Downvote a doubt (one vote per user)
+/* -------------------------------
+   6️⃣ Upvote / Downvote
+-------------------------------- */
 export const voteDoubt = async (req, res) => {
-  const { id } = req.params;
-  const { type } = req.body;
-  const userId = req.user._id;
-
   try {
+    const { id } = req.params;
+    const { type } = req.body;
+    const userId = req.user._id;
+
     const doubt = await Doubt.findById(id);
     if (!doubt) return res.status(404).json({ message: "Doubt not found" });
 
     doubt.upvotes = doubt.upvotes || [];
     doubt.downvotes = doubt.downvotes || [];
 
-    const hasUpvoted = doubt.upvotes.includes(userId);
-    const hasDownvoted = doubt.downvotes.includes(userId);
+    const isUp = doubt.upvotes.includes(userId);
+    const isDown = doubt.downvotes.includes(userId);
 
     if (type === "upvote") {
-      if (hasUpvoted) {
-        doubt.upvotes = doubt.upvotes.filter(
-          (uid) => uid.toString() !== userId.toString()
-        );
-      } else {
+      if (isUp) doubt.upvotes.pull(userId);
+      else {
         doubt.upvotes.push(userId);
-        doubt.downvotes = doubt.downvotes.filter(
-          (uid) => uid.toString() !== userId.toString()
-        );
+        doubt.downvotes.pull(userId);
       }
     } else if (type === "downvote") {
-      if (hasDownvoted) {
-        doubt.downvotes = doubt.downvotes.filter(
-          (uid) => uid.toString() !== userId.toString()
-        );
-      } else {
+      if (isDown) doubt.downvotes.pull(userId);
+      else {
         doubt.downvotes.push(userId);
-        doubt.upvotes = doubt.upvotes.filter(
-          (uid) => uid.toString() !== userId.toString()
-        );
+        doubt.upvotes.pull(userId);
       }
     }
 
     await doubt.save();
 
-    const totalVotes = doubt.upvotes.length - doubt.downvotes.length;
-
     res.json({
       message: "Vote updated successfully",
-      votes: totalVotes,
-      upvotes: doubt.upvotes.length,
-      downvotes: doubt.downvotes.length,
+      votes: doubt.upvotes.length - doubt.downvotes.length,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Vote error:", error);
+    res.status(500).json({ message: "Error updating vote" });
   }
 };
 
-// ✅ 7. Add a reply to a doubt
+/* -------------------------------
+   7️⃣ Add a reply
+-------------------------------- */
 export const addReply = async (req, res) => {
   try {
     const { id } = req.params;
     const { message } = req.body;
 
+    if (!message) return res.status(400).json({ message: "Message required" });
+
     const doubt = await Doubt.findById(id);
     if (!doubt) return res.status(404).json({ message: "Doubt not found" });
 
-    doubt.replies.push({ user: req.user._id, message });
+    // ✅ Handle reply image
+   
+    const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+
+    doubt.replies.push({
+        user: req.user._id,
+        message,
+        image: imagePath, // ✅ store image path
+      });
+
     await doubt.save();
 
-    const updated = await Doubt.findById(id)
-      .populate("replies.user", "name email")
-      .lean();
+    const updated = await Doubt.findById(id).populate("replies.user", "name email");
 
-    res.status(201).json(updated.replies);
+    res.status(201).json({
+      message: "Reply added successfully",
+      replies: updated.replies,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Add reply error:", error);
+    res.status(500).json({ message: "Error adding reply" });
   }
 };
 
-// ✅ 8. Admin approves a reply (marks doubt as resolved)
+/* -------------------------------
+   8️⃣ Admin approves a reply (resolve doubt)
+-------------------------------- */
 export const approveReply = async (req, res) => {
   try {
     const { doubtId, replyId } = req.params;
@@ -171,16 +213,17 @@ export const approveReply = async (req, res) => {
     const reply = doubt.replies.id(replyId);
     if (!reply) return res.status(404).json({ message: "Reply not found" });
 
-    // Unapprove all first
+    // Mark only one reply as approved
     doubt.replies.forEach((r) => (r.approved = false));
 
-    // Approve selected reply
     reply.approved = true;
     doubt.status = "RESOLVED";
     await doubt.save();
 
     res.json({ message: "✅ Reply approved successfully", doubt });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Approve reply error:", error);
+    res.status(500).json({ message: "Error approving reply" });
   }
 };
+
