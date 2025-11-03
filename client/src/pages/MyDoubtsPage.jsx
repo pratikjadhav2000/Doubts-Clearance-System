@@ -11,10 +11,12 @@ const MyDoubtsPage = () => {
   useEffect(() => {
     const fetchDoubts = async () => {
       try {
-        const { data } = await axios.get("http://localhost:5000/api/doubts/all", {
+        const { data } = await axios.get("http://localhost:5000/api/doubts/my", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setDoubts(data);
+
+        // ✅ Fix: Access `data.doubts` instead of entire object
+        setDoubts(Array.isArray(data.doubts) ? data.doubts : []);
       } catch (err) {
         console.error("Failed to load doubts:", err);
       } finally {
@@ -82,9 +84,6 @@ const MyDoubtsPage = () => {
           <a href="/my-doubts" className="flex items-center gap-3 bg-blue-100 text-blue-700 font-medium px-3 py-2 rounded-lg">
             📚 My Doubts
           </a>
-          <a href="/admin" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100">
-            👨‍💻 Moderator/Admin
-          </a>
         </nav>
       </aside>
 
@@ -92,60 +91,64 @@ const MyDoubtsPage = () => {
       <main className="flex-1 p-10">
         <h2 className="text-3xl font-bold mb-8">My Doubts</h2>
 
-        <div className="space-y-6">
-          {doubts.map((doubt) => {
-            const userId = localStorage.getItem("user_id"); // optional if you store this after login
-            const hasUpvoted = doubt.upvotes?.includes(userId);
-            const hasDownvoted = doubt.downvotes?.includes(userId);
+        {doubts.length === 0 ? (
+          <p className="text-gray-500">You haven’t posted any doubts yet.</p>
+        ) : (
+          <div className="space-y-6">
+            {doubts.map((doubt) => {
+              const userId = localStorage.getItem("user_id"); // optional
+              const hasUpvoted = doubt.upvotes?.includes(userId);
+              const hasDownvoted = doubt.downvotes?.includes(userId);
 
-            return (
-              <div
-                key={doubt._id}
-                className="bg-white rounded-xl shadow p-6 flex justify-between items-start hover:shadow-md transition-all"
-              >
-                <div className="flex-1 pr-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-1">{doubt.title}</h3>
-                  <p className="text-gray-600 mb-3">{doubt.description}</p>
+              return (
+                <div
+                  key={doubt._id}
+                  className="bg-white rounded-xl shadow p-6 flex justify-between items-start hover:shadow-md transition-all"
+                >
+                  <div className="flex-1 pr-6">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-1">{doubt.title}</h3>
+                    <p className="text-gray-600 mb-3">{doubt.description}</p>
 
-                  <p
-                    className={`inline-block text-sm font-medium px-3 py-1 rounded-full ${
-                      doubt.status === "RESOLVED"
-                        ? "bg-green-100 text-green-700"
-                        : doubt.status === "APPROVED"
-                        ? "bg-blue-100 text-blue-700"
-                        : "bg-yellow-100 text-yellow-700"
-                    }`}
-                  >
-                    {doubt.status}
-                  </p>
+                    <p
+                      className={`inline-block text-sm font-medium px-3 py-1 rounded-full ${
+                        doubt.status === "RESOLVED"
+                          ? "bg-green-100 text-green-700"
+                          : doubt.status === "APPROVED"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}
+                    >
+                      {doubt.status}
+                    </p>
+                  </div>
+
+                  {/* Votes Section */}
+                  <div className="flex flex-col items-center justify-center">
+                    <button
+                      onClick={() => handleVote(doubt._id, "upvote")}
+                      className={`text-2xl ${
+                        hasUpvoted ? "text-green-600" : "text-gray-500"
+                      } hover:text-green-600 transition`}
+                    >
+                      👍
+                    </button>
+                    <span className="text-xl font-bold text-gray-700 my-1">
+                      {doubt.votes || 0}
+                    </span>
+                    <button
+                      onClick={() => handleVote(doubt._id, "downvote")}
+                      className={`text-2xl ${
+                        hasDownvoted ? "text-red-600" : "text-gray-500"
+                      } hover:text-red-600 transition`}
+                    >
+                      👎
+                    </button>
+                  </div>
                 </div>
-
-                {/* Votes Section */}
-                <div className="flex flex-col items-center justify-center">
-                  <button
-                    onClick={() => handleVote(doubt._id, "upvote")}
-                    className={`text-2xl ${
-                      hasUpvoted ? "text-green-600" : "text-gray-500"
-                    } hover:text-green-600 transition`}
-                  >
-                    👍
-                  </button>
-                  <span className="text-xl font-bold text-gray-700 my-1">
-                    {doubt.votes || 0}
-                  </span>
-                  <button
-                    onClick={() => handleVote(doubt._id, "downvote")}
-                    className={`text-2xl ${
-                      hasDownvoted ? "text-red-600" : "text-gray-500"
-                    } hover:text-red-600 transition`}
-                  >
-                    👎
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </main>
     </div>
   );

@@ -1,52 +1,34 @@
+// server/models/user.js
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true, index: true },
-
-    // ✅ OAuth provider info
-    authProvider: {
-      type: String,
-      enum: ["local", "google"],
-      default: "google",
-    },
-    googleId: { type: String },
-
-    // ✅ password (only for local users)
-    password: { type: String, select: false },
-
-    // ✅ Only two roles now
+    name: { type: String, required: true, trim: true },
+    email: { type: String, required: true, unique: true, lowercase: true },
+    password: { type: String, required: true },
     role: {
       type: String,
-      enum: ["USER", "ADMIN"], // 👈 simplified
+      enum: ["USER", "ADMIN"],
       default: "USER",
     },
-
-    // ✅ other metadata
-    reputation: { type: Number, default: 0 },
-    status: {
-      type: String,
-      enum: ["ACTIVE", "SUSPENDED"],
-      default: "ACTIVE",
-    },
+    isSuspended: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
 
-// ✅ Hash password only for local users
+// 🔒 Encrypt password before saving
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password") || this.authProvider === "google") return next();
+  if (!this.isModified("password")) return next();
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });
 
-// ✅ Compare entered password (for local login)
+// 🔑 Password check
 userSchema.methods.matchPassword = async function (enteredPassword) {
-  if (!this.password) return false;
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-export default mongoose.model("User", userSchema);
+const User = mongoose.models.User || mongoose.model("User", userSchema);
+export default User;

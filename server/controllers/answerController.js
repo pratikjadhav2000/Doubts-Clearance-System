@@ -1,5 +1,5 @@
 import Answer from "../models/Answer.js";
-import User from "../models/User.js";
+import User from "../models/user.js";
 import Vote from "../models/Vote.js"; // if using a separate votes collection
 import { updateReputation } from "../utils/reputationUtils.js";
 

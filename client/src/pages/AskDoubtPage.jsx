@@ -4,26 +4,40 @@ import axios from "axios";
 const AskDoubtPage = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [attachments, setAttachments] = useState([]); // ✅ image files
+  const [previewImages, setPreviewImages] = useState([]); // ✅ for UI preview
   const [duplicates, setDuplicates] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const token = localStorage.getItem("jwt_token");
 
-  // ✅ Handle doubt submission
+  // 🧠 handle image selection
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    setAttachments(files);
+
+    // ✅ Create preview URLs for UI
+    const previews = files.map((file) => URL.createObjectURL(file));
+    setPreviewImages(previews);
+  };
+
+  // ✅ Step 1 — Check for duplicates
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    if (!token) {
+      alert("You must be logged in to post a doubt.");
+      return;
+    }
 
+    setLoading(true);
     try {
-      // Step 1️⃣ Check for duplicate doubts before posting
       const res = await axios.post(
         "http://localhost:5000/api/doubts/check-duplicate",
-        { title, description },
+        { title },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // If similar doubts exist → show modal first
       if (res.data.similar && res.data.similar.length > 0) {
         setDuplicates(res.data.similar);
         setShowModal(true);
@@ -38,22 +52,39 @@ const AskDoubtPage = () => {
     }
   };
 
-  // ✅ Actually post the doubt to backend
+  // ✅ Step 2 — Create the doubt with image upload
   const postDoubt = async () => {
     try {
-      await axios.post(
-        "http://localhost:5000/api/doubts",
-        { title, description },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      if (!token) {
+        alert("You are not logged in.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("description", description);
+      attachments.forEach((file) => formData.append("attachments", file));
+
+      const res = await axios.post("http://localhost:5000/api/doubts", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      console.log("✅ Doubt created:", res.data);
       alert("✅ Doubt posted successfully!");
       setTitle("");
       setDescription("");
+      setAttachments([]);
+      setPreviewImages([]);
       setDuplicates([]);
       setShowModal(false);
+
+      window.location.href = "/dashboard";
     } catch (err) {
       console.error("Error posting doubt:", err);
-      alert("❌ Error posting doubt. Try again.");
+      alert("❌ Error posting doubt. Please try again.");
     }
   };
 
@@ -63,8 +94,9 @@ const AskDoubtPage = () => {
         Ask a Doubt
       </h1>
 
-      {/* 🧾 Doubt Form */}
+      {/* 🧾 Form */}
       <form onSubmit={handleSubmit}>
+        {/* Title */}
         <div className="mb-4">
           <label className="block text-gray-700 font-medium mb-2">
             Title of your doubt
@@ -79,6 +111,7 @@ const AskDoubtPage = () => {
           />
         </div>
 
+        {/* Description */}
         <div className="mb-4">
           <label className="block text-gray-700 font-medium mb-2">
             Description
@@ -93,6 +126,33 @@ const AskDoubtPage = () => {
           />
         </div>
 
+        {/* ✅ Image Upload Section */}
+        <div className="mb-4">
+          <label className="block text-gray-700 font-medium mb-2">
+            Attach Images (optional)
+          </label>
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handleImageChange}
+            className="w-full border border-gray-300 p-2 rounded-md"
+          />
+          {previewImages.length > 0 && (
+            <div className="mt-3 grid grid-cols-3 gap-3">
+              {previewImages.map((src, idx) => (
+                <img
+                  key={idx}
+                  src={src}
+                  alt={`preview-${idx}`}
+                  className="h-24 w-full object-cover rounded-md border"
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Submit */}
         <button
           type="submit"
           disabled={loading}
