@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Moon, Sun, Bell } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
+import axios from "axios";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem("theme") === "dark");
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [points, setPoints] = useState(0);
-  const dropdownRef = useRef(null);
+  const [reputation, setReputation] = useState(0);
+  const token = localStorage.getItem("jwt_token");
 
   /* 🌗 Dark Mode Sync */
   useEffect(() => {
@@ -21,47 +20,44 @@ const Navbar = () => {
     }
   }, [darkMode]);
 
-  /* 🔔 Mock Notifications */
+  /* ⭐ Fetch reputation dynamically */
+  const fetchReputation = async () => {
+    try {
+      const { data } = await axios.get("http://localhost:5000/api/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setReputation(data?.user?.reputation || 0);
+    } catch (err) {
+      console.error("Failed to fetch user reputation:", err);
+    }
+  };
+
   useEffect(() => {
-    setNotifications([
-      { id: 1, text: "Your doubt was answered ✅" },
-      { id: 2, text: "Admin approved your reply 💬" },
-      { id: 3, text: "Leaderboard updated 🏆" },
-    ]);
+    if (token) fetchReputation();
+  }, [token]);
+
+  // 🔄 Listen for global reputation updates
+  useEffect(() => {
+    const handleUpdate = () => fetchReputation();
+    window.addEventListener("updateReputation", handleUpdate);
+    return () => window.removeEventListener("updateReputation", handleUpdate);
   }, []);
 
-  /* 💎 Mock Points */
-  useEffect(() => {
-    const storedPoints = localStorage.getItem("user_points") || 120;
-    setPoints(Number(storedPoints));
-  }, []);
-
-  /* 🧠 Close dropdown when clicking outside */
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setShowNotifications(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
+  /* 🚪 Logout */
   const logout = () => {
     localStorage.removeItem("jwt_token");
     localStorage.removeItem("user_role");
-    navigate("/", { replace: true });
+    localStorage.removeItem("user_id");
+    window.location.href = "/login"; // full reload for safety
   };
 
   return (
     <nav
-      className={`
-        sticky top-0 z-30 w-full
-        ${darkMode
-          ? "bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border-b border-gray-700"
-          : "bg-gradient-to-r from-blue-100 via-white to-blue-100 border-b border-blue-100"}
-        flex justify-between items-center px-6 py-3 shadow-md transition-colors duration-500
-      `}
+      className={`sticky top-0 z-30 w-full flex justify-between items-center px-6 py-3 shadow-md border-b transition-colors duration-500 ${
+        darkMode
+          ? "bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border-gray-700"
+          : "bg-gradient-to-r from-blue-100 via-white to-blue-100 border-blue-100"
+      }`}
     >
       {/* 🔹 Brand */}
       <div
@@ -77,67 +73,15 @@ const Navbar = () => {
 
       {/* 🔹 Right Controls */}
       <div className="flex items-center gap-4">
-        {/* 💎 Points */}
+        {/* ⭐ Dynamic Reputation */}
         <div
-          className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${
+          className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold transition ${
             darkMode
-              ? "bg-gray-800 text-cyan-300 border border-gray-700"
+              ? "bg-gray-800 text-yellow-400 border border-gray-700"
               : "bg-blue-100 text-blue-700 border border-blue-200"
           }`}
         >
-          ⭐ {points}
-        </div>
-
-        {/* 🔔 Notifications */}
-        <div className="relative" ref={dropdownRef}>
-          <button
-            onClick={() => setShowNotifications(!showNotifications)}
-            className={`relative p-2 rounded-full transition-all ${
-              darkMode ? "hover:bg-gray-700" : "hover:bg-blue-100"
-            }`}
-          >
-            <Bell className={`h-5 w-5 ${darkMode ? "text-gray-200" : "text-gray-700"}`} />
-            {notifications.length > 0 && (
-              <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-            )}
-          </button>
-
-          {/* 🔽 Dropdown */}
-          <div
-            className={`absolute right-0 mt-2 w-64 shadow-lg rounded-lg overflow-hidden transform transition-all duration-200 origin-top-right ${
-              showNotifications
-                ? "opacity-100 scale-100 translate-y-0"
-                : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
-            } ${darkMode ? "bg-gray-800 border border-gray-700" : "bg-white border border-gray-200"}`}
-          >
-            <div
-              className={`px-4 py-2 font-semibold ${
-                darkMode ? "text-gray-100 border-b border-gray-700" : "text-gray-700 border-b border-gray-100"
-              }`}
-            >
-              Notifications
-            </div>
-            {notifications.length === 0 ? (
-              <p className={`text-sm p-4 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
-                No new notifications
-              </p>
-            ) : (
-              <ul className="max-h-60 overflow-y-auto">
-                {notifications.map((n) => (
-                  <li
-                    key={n.id}
-                    className={`px-4 py-2 text-sm transition ${
-                      darkMode
-                        ? "text-gray-200 hover:bg-gray-700"
-                        : "text-gray-700 hover:bg-blue-50"
-                    }`}
-                  >
-                    {n.text}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          ⭐ {reputation}
         </div>
 
         {/* 🌗 Theme Toggle */}

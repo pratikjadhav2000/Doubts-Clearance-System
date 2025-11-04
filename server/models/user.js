@@ -13,6 +13,8 @@ const userSchema = new mongoose.Schema(
       default: "USER",
     },
     isSuspended: { type: Boolean, default: false },
+    reputation: { type: Number, default: 0 },
+
   },
   { timestamps: true }
 );
