@@ -33,7 +33,7 @@ const doubtSchema = new mongoose.Schema(
     // 🗳️ Voting
     upvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     downvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-
+    totalvotes : {type : Number, default : 0}, //pratik total count of votes
     // 💬 Replies
     replies: [replySchema],
 
@@ -52,6 +52,12 @@ const doubtSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// 🧩 Pre-save hook to auto-sync  vote counts - Pratik
+doubtSchema.pre("save", function (next) {
+  this.totalvotes = this.upvotes.length - this.downvotes.length;
+  next();
+});
 
 /* -------------------------------
    🧹 Virtuals and Cleanup

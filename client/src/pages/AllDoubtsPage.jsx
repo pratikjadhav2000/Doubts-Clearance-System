@@ -65,9 +65,12 @@ const AllDoubtsPage = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+
+      console.log("Data is : ",res); 
       setDoubts((prev) =>
-        prev.map((d) => (d._id === id ? { ...d, votes: res.data.votes } : d))
+        prev.map((d) => (d._id === id ? { ...d, totalvotes: res.data.votes } : d))
       );
+      
     } catch (error) {
       console.error("Vote error:", error);
       alert(error.response?.data?.message || "Error while voting");
@@ -228,7 +231,7 @@ const AllDoubtsPage = () => {
                   >
                     👍
                   </button>
-                  <span className="font-bold">{doubt.votes || 0}</span>
+                  <span className="font-bold">{doubt.totalvotes || 0}</span>
                   <button
                     onClick={() => handleVote(doubt._id, "downvote")}
                     className="text-2xl text-gray-500 hover:text-red-600 transition"

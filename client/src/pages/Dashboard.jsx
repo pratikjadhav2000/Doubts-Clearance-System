@@ -190,7 +190,7 @@ console.log("User API response:", userRes.data); // 🧩 add this
                       </span>
                     </td>
                     <td className="py-3 px-4 font-semibold text-gray-700">
-                      {doubt.votes || 0}
+                      {doubt.totalvotes || 0}
                     </td>
                     <td className="py-3 px-4 text-gray-500">
                       {new Date(doubt.createdAt).toLocaleDateString()}

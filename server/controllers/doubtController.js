@@ -358,7 +358,7 @@ export const addReply = async (req, res) => {
 };
 
 /* -------------------------------
-   6️⃣ Upvote / Downvote a doubt
+   6️⃣ Upvote / Downvote
 -------------------------------- */
 export const voteDoubt = async (req, res) => {
   try {
@@ -375,25 +375,30 @@ export const voteDoubt = async (req, res) => {
     const isUp = doubt.upvotes.includes(userId);
     const isDown = doubt.downvotes.includes(userId);
 
+    //pratik - user vote count only once
     if (type === "upvote") {
-      if (!isUp) {
+      
+      if (!isUp) {      
         doubt.upvotes.push(userId);
         doubt.downvotes.pull(userId);
       }
+
     } else if (type === "downvote") {
+      
       if (!isDown) {
         doubt.downvotes.push(userId);
         doubt.upvotes.pull(userId);
       }
     }
 
+    //pratik - calculate vote count
+    doubt.totalvotes = doubt.upvotes.length - doubt.downvotes.length;
+
     await doubt.save();
 
     res.json({
       message: "Vote updated successfully",
-      votes: doubt.upvotes.length - doubt.downvotes.length,
-      upvotes: doubt.upvotes,
-      downvotes: doubt.downvotes,
+      votes: doubt.totalvotes,
     });
   } catch (error) {
     console.error("Vote error:", error);

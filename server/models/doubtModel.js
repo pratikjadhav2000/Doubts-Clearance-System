@@ -27,6 +27,7 @@ const doubtSchema = new mongoose.Schema(
 
     upvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     downvotes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    totalvotes : {type : Number, default : 0}, //pratik total count of votes
 
     replies: [replySchema],
 
