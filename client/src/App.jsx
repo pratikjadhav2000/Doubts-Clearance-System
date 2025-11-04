@@ -32,10 +32,12 @@ function RootRedirect() {
     const params = new URLSearchParams(location.search);
     const token = params.get("token");
     const role = params.get("role");
+    const userId = params.get("userId");
 
     if (token) {
       localStorage.setItem("jwt_token", token);
       if (role) localStorage.setItem("user_role", role);
+      if (userId) localStorage.setItem("user_id", userId);
 
       // redirect based on role
       if (role === "ADMIN") {
@@ -49,6 +51,7 @@ function RootRedirect() {
   const token = localStorage.getItem("jwt_token");
   return token ? <Navigate to="/dashboard" replace /> : <LoginPage />;
 }
+
 
 function App() {
   const isAuthed = !!localStorage.getItem("jwt_token");

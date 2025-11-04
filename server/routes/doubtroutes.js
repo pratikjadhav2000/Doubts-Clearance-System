@@ -10,13 +10,12 @@ import {
   addReply,
   approveReply,
 } from "../controllers/doubtController.js";
-import { protect, authorizeRoles } from "../middleware/authMiddleware.js"; // ✅ corrected path
+import { protect, authorizeRoles } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
-router.post("/", protect, upload.array("attachments", 5), createDoubt);
-router.post("/:id/reply", protect, upload.single("attachment"), addReply);
+
 /* -------------------------------
-   ✅ Health Check
+   🧠 Health Check
 -------------------------------- */
 router.get("/", (req, res) => {
   res.json({ message: "🧠 Doubt routes working properly!" });
@@ -25,47 +24,40 @@ router.get("/", (req, res) => {
 /* -------------------------------
    🎓 User Routes
 -------------------------------- */
-// Ask a new doubt
-router.post("/", protect, createDoubt);
+// ✅ Ask a new doubt (with attachments)
+router.post("/", protect, upload.array("attachments", 5), createDoubt);
 
-// Check for duplicates before posting
+// ✅ Check for duplicate doubts
 router.post("/check-duplicate", protect, checkDuplicateDoubt);
 
-// Fetch all doubts (for browsing/search)
+// ✅ Get all public doubts
 router.get("/all", protect, getAllDoubts);
 
-// Fetch doubts posted by the logged-in user
+// ✅ Get doubts of the logged-in user
 router.get("/my", protect, getMyDoubts);
 
-// Dashboard summary stats
-router.get("/dashboard", protect, getDashboardStats);
+// ✅ Add a reply (any user can reply)
+router.post("/:id/reply", protect, upload.single("attachment"), addReply);
 
-// ✅ Corrected path for vote (was /vote/:id → should be /:id/vote)
+// ✅ Upvote or downvote a doubt
 router.post("/:id/vote", protect, voteDoubt);
 
-// Add reply (students or admin can reply)
+// ✅ Approve a reply — only the doubt owner can approve
+router.patch("/:doubtId/replies/:replyId/approve", protect, approveReply);
 
-
+// ✅ Dashboard stats
+router.get("/dashboard", protect, getDashboardStats);
 
 /* -------------------------------
    🧑‍💻 Admin Routes
 -------------------------------- */
-// Approve a reply & mark doubt as resolved
-router.put(
-  "/:doubtId/replies/:replyId/approve",
-  protect,
-  authorizeRoles("ADMIN"),
-  approveReply
-);
-
-// Fetch all doubts (for Admin Panel)
+// Admin: View all doubts
 router.get(
   "/admin/all",
   protect,
   authorizeRoles("ADMIN"),
   async (req, res, next) => {
     try {
-      // Lazy import controller to prevent circular import
       const { getAllDoubts } = await import("../controllers/doubtController.js");
       return getAllDoubts(req, res, next);
     } catch (err) {
