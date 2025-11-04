@@ -7,7 +7,7 @@ import generateToken from "../utils/generateToken.js";
 -------------------------------- */
 const ADMIN_EMAILS = [
   "kevalsinh_m250833cs@nitc.ac.in",
-  "sanket@nitc.ac.in",
+  "pratik_m250461cs@nitc.ac.in"
 ];
 
 /* -------------------------------
@@ -112,7 +112,7 @@ export const googleAuthCallback = async (req, res) => {
 
     if (!googleUser || !googleUser.email) {
       console.error("⚠️ Missing Google profile data:", req.user);
-      return res.redirect("http://localhost:3000/login?error=missing_data");
+      return res.redirect(process.env.CLIENT_URL + "/login?error=missing_data"); //dynamic URL - Pratik
     }
 
     const { name, email, googleId } = googleUser;
@@ -143,12 +143,12 @@ export const googleAuthCallback = async (req, res) => {
     const token = tokenFromPassport || generateToken(user._id, user.role);
 
     // ✅ Redirect to frontend (token + role)
-    const redirectUrl = `http://localhost:3000/?token=${token}&role=${user.role}`;
+    const redirectUrl = process.env.CLIENT_URL + `/?token=${token}&role=${user.role}`; //pratik dynamic CLIENT_URL
     console.log(`🔐 Google Login Success: ${email} (${user.role})`);
     return res.redirect(redirectUrl);
   } catch (error) {
     console.error("Google login error:", error);
-    return res.redirect("http://localhost:3000/login?error=google_auth_failed");
+    return res.redirect(process.env.CLIENT_URL +"/login?error=google_auth_failed"); //pratik dynamic CLIENT_URL
   }
 };
 

@@ -137,15 +137,17 @@ export const voteDoubt = async (req, res) => {
     const isUp = doubt.upvotes.includes(userId);
     const isDown = doubt.downvotes.includes(userId);
 
+    //pratik - user vote count only once
     if (type === "upvote") {
-      if (isUp) doubt.upvotes.pull(userId);
-      else {
+      
+      if (!isUp) {      
         doubt.upvotes.push(userId);
         doubt.downvotes.pull(userId);
       }
+
     } else if (type === "downvote") {
-      if (isDown) doubt.downvotes.pull(userId);
-      else {
+      
+      if (!isDown) {
         doubt.downvotes.push(userId);
         doubt.upvotes.pull(userId);
       }

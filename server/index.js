@@ -21,7 +21,7 @@ app.use("/uploads", express.static(path.join(process.cwd(), "server", "uploads")
 -------------------------------- */
 app.use(
   cors({
-    origin:"*",// frontend runs on 3000
+    origin:"*",
     credentials: true,
   })
 );

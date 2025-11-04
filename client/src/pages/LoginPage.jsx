@@ -11,11 +11,13 @@ import React, { useState, useEffect } from "react";
 const LoginPage = () => {
   const [loading, setLoading] = useState(false);
 
+  /* //Pratik commenting code - Forget login - User should login always
   // If user already has a token, send them to dashboard
   useEffect(() => {
     const token = localStorage.getItem("jwt_token");
     if (token) window.location.replace("/dashboard");
   }, []);
+  */ 
 
   const handleGoogleLogin = () => {
     setLoading(true);

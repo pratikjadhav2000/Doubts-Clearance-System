@@ -10,7 +10,7 @@ dotenv.config();
    ✅ Hard-coded Admin List
    (Replace with your actual emails)
 -------------------------------- */
-const ADMIN_EMAILS = ["kevalsinh_m250833cs@nitc.ac.in", "sanket@nitc.ac.in"];
+const ADMIN_EMAILS = ["kevalsinh_m250833cs@nitc.ac.in","pratik_m250461cs@nitc.ac.in"];
 
 /* -------------------------------
    ✅ Google OAuth Configuration
@@ -49,6 +49,11 @@ passport.use(
             role: ADMIN_EMAILS.includes(email.toLowerCase()) ? "ADMIN" : "USER",
           });
           console.log(`🆕 Created new user: ${email} (${user.role})`);
+        }
+        // Block User if suspended - Pratik
+        if (user.isSuspended){
+          throw "User is Suspended!"
+          console.log(`User is Suspended`);
         }
 
         // ✅ Sync admin role dynamically
