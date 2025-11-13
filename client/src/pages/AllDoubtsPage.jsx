@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import api from "../utils/api";
 
 const AllDoubtsPage = () => {
   const [doubts, setDoubts] = useState([]);
@@ -13,7 +14,7 @@ const AllDoubtsPage = () => {
   useEffect(() => {
     const fetchUserRole = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/auth/me", {
+        const res = await api.get("/auth/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUserRole(res.data.role || res.data.user?.role || "USER");
@@ -29,7 +30,7 @@ const AllDoubtsPage = () => {
   useEffect(() => {
     const fetchDoubts = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/doubts/all", {
+        const res = await api.get("/doubts/all", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -58,8 +59,7 @@ const AllDoubtsPage = () => {
   // ✅ Handle voting
   const handleVote = async (id, type) => {
     try {
-      const res = await axios.post(
-        `http://localhost:5000/api/doubts/${id}/vote`,
+      const res = await api.post(`/doubts/${id}/vote`,
         { type },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -88,8 +88,7 @@ const AllDoubtsPage = () => {
       formData.append("message", reply.message);
       if (reply.file) formData.append("attachment", reply.file);
 
-      const res = await axios.post(
-        `http://localhost:5000/api/doubts/${id}/reply`,
+      const res = await api.post(`/doubts/${id}/reply`,
         formData,
         {
           headers: {
@@ -193,31 +192,29 @@ const AllDoubtsPage = () => {
               </h3>
               <p className="text-gray-600 mb-3">{doubt.description}</p>
 
-              {doubt.attachments && doubt.attachments.length > 0 && (
+              {/* {doubt.attachments && doubt.attachments.length > 0 && (
                 <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">
                   {doubt.attachments.map((img, idx) => (
                     <img
                       key={idx}
-                      src={`http://localhost:5000${img}`}
+                      src={`${import.meta.env.VITE_API_URL}${img}`}
                       alt="attachment"
                       className="h-32 w-full object-cover rounded-md border"
                     />
                   ))}
                 </div>
-              )}
-
-              {/* 🖼️ Show attached images */}
+              )} */}
               {doubt.attachments && doubt.attachments.length > 0 && (
-                <div className="flex flex-wrap gap-3 mb-4">
-                  {doubt.attachments.map((img, index) => (
-                    <img
-                      key={index}
-                      src={`http://localhost:5000${img}`}
-                      alt="Doubt Attachment"
-                      className="w-28 h-28 object-cover rounded-lg border hover:scale-105 transition-transform"
-                    />
-                  ))}
-                </div>
+                 <div className="flex flex-wrap gap-3 mb-4">
+                   {doubt.attachments.map((img, index) => (
+                     <img
+                       key={index}
+                       src={`${import.meta.env.VITE_API_URL}${img}`}
+                       alt="Doubt Attachment"
+                       className="w-28 h-28 object-cover rounded-lg border hover:scale-105 transition-transform"
+                     />
+                   ))}
+                 </div>
               )}
 
               <div className="flex items-center justify-between">
@@ -256,7 +253,7 @@ const AllDoubtsPage = () => {
                           <b>{r.user?.name || "Anonymous"}:</b> {r.message}
                           {r.image && (
                             <img
-                              src={`http://localhost:5000${r.image}`}
+                              src={`${import.meta.env.VITE_API_URL}${r.image}`}
                               alt="Reply Attachment"
                               className="w-32 h-32 object-cover rounded-md mt-2 border"
                             />

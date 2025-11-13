@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import api from "../utils/api";
 
 const AdminPage = () => {
   const [activeTab, setActiveTab] = useState("doubts");
@@ -14,28 +15,27 @@ const AdminPage = () => {
   }, []);
 
   const fetchDoubts = async () => {
-  try {
-    const { data } = await axios.get("http://localhost:5000/api/admin/doubts", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    console.log("✅ Admin doubts:", data);
-    setDoubts(data.doubts || []); // ✅ fixed structure
-  } catch (error) {
-    console.error("Error fetching doubts:", error);
-  }
+    try {
+      const { data } = await api.get("/admin/doubts", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      console.log("✅ Admin doubts:", data);
+      setDoubts(data.doubts || []);
+    } catch (error) {
+      console.error("Error fetching doubts:", error);
+    }
   };
 
-
   const fetchUsers = async () => {
-  try {
-    const { data } = await axios.get("http://localhost:5000/api/admin/users", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    console.log("✅ Admin users:", data);
-    setUsers(data.users || []); // <-- fixed
-  } catch (error) {
-    console.error("Error fetching users:", error);
-  }
+    try {
+      const { data } = await api.get("/admin/users", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      console.log("✅ Admin users:", data);
+      setUsers(data.users || []);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
   };
 
   /* -------------------------------
@@ -43,8 +43,7 @@ const AdminPage = () => {
   --------------------------------*/
   const handleApprove = async (doubtId, replyId) => {
     try {
-      await axios.put(
-        `http://localhost:5000/api/admin/doubts/${doubtId}`,
+      await api.put(`/admin/doubts/${doubtId}`,
         { action: "approve", replyId },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -61,8 +60,7 @@ const AdminPage = () => {
   const handleDelete = async (doubtId) => {
     if (!window.confirm("🗑️ Are you sure you want to delete this doubt?")) return;
     try {
-      await axios.put(
-        `http://localhost:5000/api/admin/doubts/${doubtId}`,
+      await api.put(`/admin/doubts/${doubtId}`,
         { action: "delete" },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -81,8 +79,7 @@ const AdminPage = () => {
   --------------------------------*/
   const handleToggleUser = async (userId) => {
     try {
-      await axios.put(
-        `http://localhost:5000/api/admin/users/${userId}`,
+      await api.put(`/admin/users/${userId}`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -95,7 +92,7 @@ const AdminPage = () => {
       alert("❌ Failed to update user");
     }
   };
-  
+
   /* -------------------------------
       🎨 RENDER
   --------------------------------*/
@@ -125,25 +122,66 @@ const AdminPage = () => {
 
       {/* 🧠 Doubts Section */}
       {activeTab === "doubts" && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {doubts.length === 0 ? (
             <p className="text-gray-500">No doubts found.</p>
           ) : (
             doubts.map((doubt) => (
               <div
                 key={doubt._id}
-                className="bg-white p-5 rounded-lg shadow-md hover:shadow-lg transition-all border"
+                className="bg-white rounded-xl shadow p-6 border border-gray-200 hover:shadow-md transition-all"
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1 pr-6">
-                    <h3 className="font-semibold text-lg text-gray-800">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-1">
                       {doubt.title}
                     </h3>
-                    <p className="text-gray-600">{doubt.description}</p>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Asked by: <span className="font-medium">{doubt.user?.name || "Anonymous"}</span>
+                    <p className="text-gray-600 mb-2">{doubt.description}</p>
+                    <p className="text-sm text-gray-500 mb-3">
+                      Asked by:{" "}
+                      <span className="font-medium">
+                        {doubt.user?.name || "Anonymous"}
+                      </span>
+                    </p>
+
+                    {/* 🖼️ Doubt Attachments */}
+                    {doubt.attachments && doubt.attachments.length > 0 && (
+                      <div className="flex flex-wrap gap-3 mb-3">
+                        {doubt.attachments.map((file, idx) =>
+                          file.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                            <img
+                              key={idx}
+                              src={`${import.meta.env.VITE_API_URL}${file}`}
+                              alt="Doubt Attachment"
+                              className="w-28 h-28 object-cover rounded-lg border hover:scale-105 transition-transform"
+                            />
+                          ) : (
+                            <a
+                              key={idx}
+                              href={`${import.meta.env.VITE_API_URL}${file}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 underline text-sm"
+                            >
+                              📎 View File
+                            </a>
+                          )
+                        )}
+                      </div>
+                    )}
+
+                    <p
+                      className={`inline-block text-sm font-medium px-3 py-1 rounded-full ${
+                        doubt.status === "RESOLVED"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}
+                    >
+                      {doubt.status}
                     </p>
                   </div>
+
+                  {/* 🔘 Actions */}
                   <div className="flex flex-col gap-2">
                     <button
                       onClick={() => handleDelete(doubt._id)}
@@ -151,55 +189,62 @@ const AdminPage = () => {
                     >
                       🗑️ Delete
                     </button>
-
-                    {/* {doubt.replies?.length > 0 && (
-                      <button
-                        onClick={() => handleApprove(doubt._id, doubt.replies[0]._id)}
-                        className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition"
-                      >
-                        ✅ Approve
-                      </button>
-                    )} */}
                   </div>
                 </div>
 
-                {/* 🖼️ Show attachments if any */}
-                {doubt.attachments?.length > 0 && (
-                  <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {doubt.attachments.map((img, idx) => (
-                      <img
-                        key={idx}
-                        src={`http://localhost:5000${img}`}
-                        alt="Attachment"
-                        className="h-32 w-full object-cover rounded-md border hover:scale-105 transition-transform"
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {/* 💬 Replies */}
+                {/* 💬 Replies Section */}
                 {doubt.replies?.length > 0 && (
-                  <div className="mt-4 border-t pt-3">
-                    <h4 className="font-semibold mb-2">Replies:</h4>
-                    {doubt.replies.map((reply, idx) => (
-                      <div
-                        key={idx}
-                        className={`p-3 rounded-lg mb-2 border ${
-                          reply.approved ? "bg-green-50 border-green-400" : "bg-gray-50"
-                        }`}
-                      >
-                        <p className="text-sm">
-                          <b>{reply.user?.name || "Anonymous"}:</b> {reply.message}
-                        </p>
-                        {reply.image && (
-                          <img
-                            src={`http://localhost:5000${reply.image}`}
-                            alt="Reply"
-                            className="mt-2 h-24 w-24 object-cover rounded-md border"
-                          />
-                        )}
-                      </div>
-                    ))}
+                  <div className="mt-5 border-t pt-4">
+                    <h4 className="font-semibold text-gray-800 mb-3">Replies:</h4>
+                    <div className="space-y-3">
+                      {doubt.replies.map((reply, idx) => (
+                        <div
+                          key={idx}
+                          className={`flex justify-between items-center p-3 rounded-lg border ${
+                            reply.approved
+                              ? "bg-green-50 border-green-300"
+                              : "bg-gray-50 border-gray-200"
+                          }`}
+                        >
+                          {/* 🗨️ Message + Attachment */}
+                          <div className="flex flex-col">
+                            <p className="text-gray-800">{reply.message}</p>
+                            <small className="text-gray-500">
+                              — {reply.user?.name || "Anonymous"}
+                            </small>
+
+                            {/* 🖼️ Reply Image Preview */}
+                            {reply.image && (
+                              reply.image.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                                <img
+                                  src={`${import.meta.env.VITE_API_URL}${reply.image}`}
+                                  alt="Reply Attachment"
+                                  className="max-w-xs max-h-48 rounded-md mt-2 border"
+                                />
+                              ) : (
+                                <a
+                                  href={`${import.meta.env.VITE_API_URL}${reply.image}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 underline text-sm mt-2 inline-block"
+                                >
+                                  📎 View Attachment
+                                </a>
+                              )
+                            )}
+                          </div>
+
+                          {/* ✅ Status Tag */}
+                          {reply.approved ? (
+                            <span className="text-green-600 font-medium">
+                              ✔ Approved
+                            </span>
+                          ) : (
+                            <span className="text-gray-500 italic">Pending</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

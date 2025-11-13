@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import api from "../utils/api";
 
 const AskDoubtPage = () => {
   const [title, setTitle] = useState("");
@@ -32,8 +33,7 @@ const AskDoubtPage = () => {
 
     setLoading(true);
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/doubts/check-duplicate",
+      const res = await api.post("/doubts/check-duplicate",
         { title },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -65,7 +65,7 @@ const AskDoubtPage = () => {
       formData.append("description", description);
       attachments.forEach((file) => formData.append("attachments", file));
 
-      const res = await axios.post("http://localhost:5000/api/doubts", formData, {
+      const res = await api.post("/doubts", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
@@ -89,7 +89,7 @@ const AskDoubtPage = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow-md mt-10 border border-gray-200">
+    <div className="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow-md mt-10 border border-gray-200 pb-8">
       <h1 className="text-3xl font-bold mb-6 text-blue-700 text-center">
         Ask a Doubt
       </h1>
