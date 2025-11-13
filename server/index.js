@@ -41,7 +41,7 @@ const __dirname = path.dirname(__filename);
 const allowedOrigins = [
   "http://localhost:5173", // local frontend
   "https://doubts-clearance-system.vercel.app", // ✅ your Vercel frontend
-  "https://doubts-clearance-system-oc64.vercel.app", // ✅ your backend (for internal checks)
+  "https://doubts-clearance-system-svyd.vercel.app", // ✅ your backend (for internal checks)
 ];
 
 // Dynamic origin check
