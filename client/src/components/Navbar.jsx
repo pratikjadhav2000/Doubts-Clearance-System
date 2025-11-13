@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Moon, Sun } from "lucide-react";
 import axios from "axios";
+import api from "../utils/api";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -23,9 +24,7 @@ const Navbar = () => {
   /* ⭐ Fetch reputation dynamically */
   const fetchReputation = async () => {
     try {
-      const { data } = await axios.get("http://localhost:5000/api/auth/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const { data } = await api.get("/auth/me");
       setReputation(data?.user?.reputation || 0);
     } catch (err) {
       console.error("Failed to fetch user reputation:", err);
