@@ -12,7 +12,7 @@ import "./config/passport.js"; // ✅ Google OAuth strategy
 // ✅ Import routes
 import authRoutes from "./routes/authRoutes.js";
 import doubtRoutes from "./routes/doubtroutes.js";
-import userRoutes from "./routes/userRoutes.js";
+import userRoutes from "./routes/userroutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 
 dotenv.config();
