@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import api from "../utils/api";
 
 const Dashboard = () => {
   const [user, setUser] = useState(null);
@@ -16,12 +17,12 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
       try {
         // Get user info
-        const userRes = await axios.get("http://localhost:5000/api/auth/me", {
+        const userRes = await api.get("/auth/me", {
   headers: { Authorization: `Bearer ${token}` },
 });
 console.log("User API response:", userRes.data); // 🧩 add this
 
-        // const userRes = await axios.get("http://localhost:5000/api/auth/me", {
+        // const userRes = await api.get("/auth/me", {
         //   headers: { Authorization: `Bearer ${token}` },
         // });
 
@@ -34,7 +35,7 @@ console.log("User API response:", userRes.data); // 🧩 add this
         }
 
         // Get dashboard stats
-        const res = await axios.get("http://localhost:5000/api/doubts/dashboard", {
+        const res = await api.get("/doubts/dashboard", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -73,7 +74,7 @@ console.log("User API response:", userRes.data); // 🧩 add this
           </div>
           <div>
             <h1 className="text-lg font-semibold">Doubts Clearance</h1>
-            <p className="text-sm text-gray-500 -mt-1">System</p>
+            <p className="text-lg font-semibold -mt-1">System</p>
           </div>
         </div>
 
