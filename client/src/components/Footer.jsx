@@ -1,13 +1,15 @@
 import React from "react";
 
 const Footer = () => {
+  const year = new Date().getFullYear();
+
   return (
     <footer className="bg-gradient-to-r from-blue-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-950 dark:to-gray-900 border-t border-blue-100 dark:border-gray-700 py-6 px-6 mt-auto shadow-inner transition-all duration-300">
       <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center text-sm text-gray-600 dark:text-gray-400">
         {/* 🌿 Left Section */}
         <p className="text-center sm:text-left mb-3 sm:mb-0">
-          © {new Date().getFullYear()}{" "}
-          <span className="font-semibold bg-gradient-to-r from-blue-600 to-blue-400 dark:from-blue-400 dark:to-cyan-400 bg-clip-text text-transparent">
+          © {year}{" "}
+          <span className="font-semibold bg-gradient-to-r from-blue-700 to-blue-400 dark:from-blue-400 dark:to-cyan-400 bg-clip-text text-transparent">
             Doubts Clearance System
           </span>{" "}
           — Empowering Students to Learn & Grow.
@@ -17,13 +19,13 @@ const Footer = () => {
         <div className="flex items-center gap-5">
           <a
             href="/about"
-            className="hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 hover:scale-105"
+            className="hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 hover:scale-[1.08]"
           >
             About
           </a>
           <a
             href="/contact"
-            className="hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 hover:scale-105"
+            className="hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 hover:scale-[1.08]"
           >
             Contact
           </a>
@@ -31,7 +33,7 @@ const Footer = () => {
             href="https://github.com/"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 hover:scale-105 flex items-center gap-1"
+            className="hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 hover:scale-[1.08] flex items-center gap-1"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -50,10 +52,10 @@ const Footer = () => {
       <div className="mt-4 border-t border-blue-100 dark:border-gray-700"></div>
 
       {/* ❤️ Bottom Tagline */}
-      <p className="text-xs text-gray-400 dark:text-gray-500 text-center mt-3">
-        Made with ❤️ by{" "}
+      <p className="text-xs text-gray-400 dark:text-gray-500 text-center mt-3 tracking-wide">
+        Made with <span className="text-red-500">❤️</span> by{" "}
         <span className="font-medium text-blue-500 dark:text-blue-400">
-          Your Team
+          Our Team
         </span>
       </p>
     </footer>
