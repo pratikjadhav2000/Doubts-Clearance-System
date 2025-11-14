@@ -85,3 +85,23 @@ export const deleteComment = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const modifyComment = async (req, res) => {
+  const { commentId } = req.params;
+  const { text } = req.body;
+
+  try {
+    const comment = await Comment.findById(commentId);
+    if (!comment) return res.status(404).json({ message: "Comment not found" });
+
+    if (comment.createdBy.toString() !== req.user._id.toString())
+      return res.status(403).json({ message: "Not authorized to update this comment" });
+
+    comment.text = text || comment.text;
+    await comment.save();
+
+    res.json(comment);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
