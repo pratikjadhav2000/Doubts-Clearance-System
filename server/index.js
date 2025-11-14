@@ -12,7 +12,7 @@ import "./config/passport.js"; // ✅ Google OAuth strategy
 // ✅ Import routes
 import authRoutes from "./routes/authRoutes.js";
 import doubtRoutes from "./routes/doubtroutes.js";
-import userRoutes from "./routes/userRoutes.js";
+import userRoutes from "./routes/userroutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 
 dotenv.config();
@@ -25,15 +25,6 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-/* -------------------------------
-   ✅ CORS Setup
--------------------------------- */
-// app.use(
-//   cors({
-//     origin: process.env.CLIENT_URL || "http://localhost:5173",
-//     credentials: true,
-//   })
-// );
 
 /* -------------------------------
    ✅ CORS Setup (Handles Dev + Prod)
@@ -41,7 +32,9 @@ const __dirname = path.dirname(__filename);
 const allowedOrigins = [
   "http://localhost:5173", // local frontend
   "https://doubts-clearance-system.vercel.app", // ✅ your Vercel frontend
-  "https://doubts-clearance-system-oc64.vercel.app", // ✅ your backend (for internal checks)
+  "https://doubts-clearance-system-svyd.vercel.app", // ✅ your backend (for internal checks)
+  process.env.CLIENT_URL,
+  process.env.SERVER_URL,
 ];
 
 // Dynamic origin check
@@ -49,7 +42,7 @@ app.use(
   cors({
     origin: (origin, callback) => {
       // allow requests with no origin (like mobile apps, curl, Postman)
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(origin)) {   // !origin will allow Postman and similar tools because they don't send origin header
         callback(null, true);
       } else {
         console.log("❌ CORS blocked origin:", origin);
@@ -78,7 +71,7 @@ app.use("/uploads", express.static(path.join(__dirname, "server/uploads")));
 -------------------------------- */
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "super-secret-key",
+    secret: process.env.SESSION_SECRET || "super-secret-key",  // In production, use a strong secret from env variables
     resave: false,
     saveUninitialized: false,
   })
